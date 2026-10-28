@@ -143,6 +143,11 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 .sheetBtn.alt{background:var(--card)}
 .linkish{background:none;border:0;padding:0;color:var(--grape);font-weight:600;text-decoration:underline;align-self:flex-start;font-size:14px}
 .install{border:2px solid var(--ink);background:var(--sun);color:#2A1B3D;border-radius:16px;padding:12px;font-weight:700;box-shadow:var(--shadow)}
+.sync summary{display:flex;align-items:center;justify-content:space-between;gap:8px;cursor:pointer;list-style:none}
+.sync summary::-webkit-details-marker{display:none}
+.sync summary::after{content:"＋";font-weight:700;font-size:20px}
+.sync[open] summary::after{content:"－"}
+.opt{font-size:12px;font-weight:700;background:var(--sun-soft);border-radius:999px;padding:2px 10px;margin-left:auto}
 .foot{font-size:12px;color:var(--muted);text-align:center}
 @media (max-width:380px){.cats{grid-template-columns:repeat(4,1fr)}.hero{grid-template-columns:96px 1fr}.pig{width:96px;height:90px}.cbar{grid-template-columns:90px 1fr 80px}}
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
@@ -207,17 +212,17 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
     <div class="cbars" id="cbars"></div>
   </section>
 
-  <section class="panel" aria-labelledby="shH">
-    <h2 id="shH">Planilla de Google</h2>
+  <details class="panel sync" id="syncBox">
+    <summary><h2 id="shH">Copia en Google Sheets</h2><span class="opt">Opcional</span></summary>
     <div class="sheet" style="margin-top:10px">
       <div id="sheetSetup" class="sheet">
-        <p>Para sincronizar, pegá el link del script de Google y la clave que te pasó Claude. Se hace una sola vez.</p>
+        <p>No hace falta para usar la app. Sirve para tener una copia de tus gastos en una planilla de Google. Pegá el link de tu script (termina en <b>/exec</b>) y tu clave.</p>
         <input id="scriptUrl" class="field" placeholder="https://script.google.com/macros/s/…/exec" aria-label="Link del script" autocomplete="off">
         <input id="scriptKey" class="field" placeholder="Clave" aria-label="Clave del script" autocomplete="off">
         <button class="sheetBtn" id="saveSync" type="button">Guardar conexión</button>
       </div>
       <div id="sheetReady" class="sheet" hidden>
-        <p>Conectado con tu planilla <b>Chanchito Gastos</b>. Solo se envía lo que todavía no está.</p>
+        <p>Conectado con tu planilla. Solo se envía lo que todavía no está.</p>
         <div class="two">
           <button class="sheetBtn" id="sheetBtn" type="button">Enviar a la planilla</button>
           <button class="sheetBtn alt" id="pullBtn" type="button">Traer de la planilla</button>
@@ -225,9 +230,9 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
         <button class="linkish" id="resetSync" type="button">Cambiar conexión</button>
       </div>
       <p class="sheetMsg" id="sheetMsg" hidden></p>
-      <a href="https://docs.google.com/spreadsheets/d/12fhVYYhf7atfLBKR6rA0xrOXjPMxFo1LfxBvM3uOB8Q/edit" target="_blank" rel="noopener">Abrir la planilla ↗</a>
+      <a id="sheetLink" href="#" target="_blank" rel="noopener" hidden>Abrir mi planilla ↗</a>
     </div>
-  </section>
+  </details>
 
   <section class="panel" aria-labelledby="listH">
     <h2 id="listH">Historial</h2>
@@ -413,9 +418,11 @@ $("budgetOk").addEventListener("click",async()=>{const v=parseMonto($("budgetIn"
 /* ---------- Sincronización con Google Sheets (Apps Script) ---------- */
 let sync=LS.get("cg_sync",null); // {url,key}
 function sheetMsg(t,bad){const m=$("sheetMsg");m.textContent=t;m.classList.toggle("bad",!!bad);m.hidden=!t}
-function showSync(){$("sheetSetup").hidden=!!sync;$("sheetReady").hidden=!sync}
+function showSync(){$("sheetSetup").hidden=!!sync;$("sheetReady").hidden=!sync;const l=$("sheetLink");if(sync&&sync.sheet){l.href=sync.sheet;l.hidden=false}else l.hidden=true;if(sync)$("syncBox").open=true}
+function rememberSheet(j){if(j&&j.planilla&&sync&&/^https:\/\/docs\.google\.com\//.test(j.planilla)&&sync.sheet!==j.planilla){sync.sheet=j.planilla;LS.set("cg_sync",sync);showSync()}}
 $("saveSync").addEventListener("click",()=>{
   const url=$("scriptUrl").value.trim(),key=$("scriptKey").value.trim();
+  if(/docs\.google\.com\/spreadsheets/.test(url)){sheetMsg("Ese es el link de la planilla. Acá va el link del script: lo obtenés en la planilla, en Extensiones → Apps Script → Implementar.",true);return}
   if(!/^https:\/\/script\.google\.com\/macros\/s\/[^/]+\/exec/.test(url)){sheetMsg("El link tiene que empezar con https://script.google.com/macros/s/ y terminar en /exec.",true);return}
   if(!key){sheetMsg("Falta la clave.",true);return}
   sync={url,key};LS.set("cg_sync",sync);showSync();sheetMsg("Conexión guardada. Probá con Traer de la planilla.");
@@ -443,6 +450,7 @@ $("sheetBtn").addEventListener("click",async()=>{
   const btn=$("sheetBtn");btn.disabled=true;btn.textContent="Enviando…";sheetMsg("");
   try{
     const j=await call("POST",{gastos:gastos.map(g=>({id:g.id,fecha:g.fecha,cat:catById(g.cat).n,monto:+g.monto,nota:g.nota||""}))});
+    rememberSheet(j);
     sheetMsg(j.agregados?"¡Listo! Mandé "+j.agregados+(j.agregados===1?" gasto":" gastos")+" a la planilla.":"Todo al día: la planilla ya tiene todos tus gastos.");
     if(j.agregados)coin();
   }catch(e){sheetMsg(syncErr(e),true)}
@@ -452,6 +460,7 @@ $("pullBtn").addEventListener("click",async()=>{
   const btn=$("pullBtn");btn.disabled=true;btn.textContent="Trayendo…";sheetMsg("");
   try{
     const j=await call("GET");
+    rememberSheet(j);
     const have=new Set(gastos.map(g=>g.id));
     const nuevos=(j.gastos||[]).filter(g=>g.id&&!have.has(g.id)&&/^\d{4}-\d{2}-\d{2}$/.test(g.fecha)&&+g.monto>0)
       .map((g,i)=>({id:String(g.id),fecha:g.fecha,cat:CAT_BY_NAME[String(g.cat).toLowerCase()]||"otros",monto:+g.monto,nota:String(g.nota||""),ts:i}));
