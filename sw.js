@@ -1,5 +1,5 @@
 // Chanchito Gastos: guarda la app para que abra sin internet.
-const VERSION = "chanchito-v2";
+const VERSION = "chanchito-v4";
 const CORE = ["./", "index.html", "manifest.json", "icon-192.png", "icon-512.png", "icon-maskable.png"];
 
 self.addEventListener("install", (e) => {

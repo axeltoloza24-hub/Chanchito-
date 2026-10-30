@@ -75,7 +75,44 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 .saldo .big{font-size:30px;font-weight:700;line-height:1.1;overflow-wrap:anywhere}
 .saldo .mood{margin:4px 0 8px;font-weight:600}
 .bar{height:14px;border-radius:999px;background:var(--line);border:2px solid var(--ink);overflow:hidden}
-.bar i{display:block;height:100%;background:var(--mint);transition:width .5s ease,background .3s}
+.bar{display:flex}
+.bar i{display:block;height:100%;flex:none;transition:width .5s ease,background .3s}
+#barFixPaid{background:var(--grape)}
+#barFixPend{background:repeating-linear-gradient(45deg,var(--grape) 0 4px,transparent 4px 8px)}
+.hero .full{grid-column:1/-1;min-width:0}
+.todayBox{display:inline-block;background:var(--mint-soft);border-radius:10px;padding:4px 10px;font-weight:600;font-size:14px;margin-top:6px}
+.todayBox.bad{background:var(--red-soft)}
+.todayBox b,.nudge p .num{white-space:nowrap}
+.perday{font-size:13px;color:var(--muted);margin-top:4px}
+.calc{display:grid;grid-template-columns:1fr auto;gap:6px 12px;font-size:14px;border-top:2px dashed var(--line);padding-top:12px}
+.calc span{display:flex;align-items:center;gap:8px;color:var(--muted);min-width:0}
+.calc b{font-weight:600;text-align:right}
+.calc .tot{color:var(--ink);font-weight:700;font-size:16px;border-top:2px solid var(--line);padding-top:6px}
+.calc b.tot{font-family:var(--f-num)}
+.dot{width:10px;height:10px;border-radius:3px;flex:none;border:1px solid var(--ink)}
+.dot.stripe{background:repeating-linear-gradient(45deg,var(--grape) 0 2px,transparent 2px 4px)}
+.phead{display:flex;align-items:center;gap:8px}
+.hint{color:var(--muted);font-size:14px;margin:8px 0 0}
+.fxlist{margin-top:12px}
+.item.fx{grid-template-columns:40px 1fr auto}
+.fxEdit{background:none;border:0;padding:0;text-align:left;min-width:0;display:flex;flex-direction:column}
+.fxEdit b{font-weight:600}
+.fxEdit small{color:var(--muted);display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.pay{border:2px solid var(--ink);background:var(--sun);color:#2A1B3D;border-radius:999px;padding:6px 12px;font-weight:700;font-size:13px;white-space:nowrap}
+.pay.done{background:var(--mint)}
+.pay.armed{background:var(--red-soft);color:var(--red);border-color:var(--red)}
+.st{font-size:12px;font-weight:700;border-radius:6px;padding:1px 6px;color:var(--ink)}
+.st.late{background:var(--red-soft);color:var(--red)}
+.st.soon{background:var(--sun-soft)}
+.st.ok{background:var(--mint-soft)}
+.fxadd{margin-top:12px}
+.fxadd summary{cursor:pointer;list-style:none;color:var(--grape);font-weight:700}
+.fxadd summary::-webkit-details-marker{display:none}
+.fxform{display:flex;flex-direction:column;gap:8px;margin-top:10px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{border:2px solid var(--line);background:var(--card);border-radius:999px;padding:4px 10px;font-size:13px;font-weight:600}
+select.field{appearance:auto}
+.danger{color:var(--red)!important}
 .meta{display:flex;justify-content:space-between;gap:8px;font-size:13px;color:var(--muted);margin-top:6px;flex-wrap:wrap}
 .meta button{background:none;border:0;padding:0;color:var(--grape);font-weight:600;text-decoration:underline}
 
@@ -140,7 +177,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 .sheetMsg.bad{color:var(--red)!important}
 .field{min-width:0;border:2px solid var(--line);border-radius:12px;padding:10px 12px;background:var(--card);color:var(--ink);font:inherit}
 .two{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.sheetBtn.alt{background:var(--card)}
+.sheetBtn.alt{background:var(--card);color:var(--ink)}
 .linkish{background:none;border:0;padding:0;color:var(--grape);font-weight:600;text-decoration:underline;align-self:flex-start;font-size:14px}
 .install{border:2px solid var(--ink);background:var(--sun);color:#2A1B3D;border-radius:16px;padding:12px;font-weight:700;box-shadow:var(--shadow)}
 .sync summary{display:flex;align-items:center;justify-content:space-between;gap:8px;cursor:pointer;list-style:none}
@@ -174,13 +211,20 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
   <section class="panel hero" aria-label="Resumen del mes">
     <div class="pig" id="pig" aria-hidden="true"></div>
     <div class="saldo">
-      <div class="lbl">Te queda este mes</div>
+      <div class="lbl" id="leftLbl">Disponible para gastar</div>
       <div class="big num" id="left">$ 0</div>
+      <div class="todayBox" id="todayBox" hidden></div>
+      <div class="perday" id="perDay" hidden></div>
+    </div>
+    <div class="full">
       <div class="mood" id="mood"></div>
-      <div class="bar"><i id="barFill" style="width:0"></i></div>
-      <div class="meta"><span id="spentTx" class="num"></span><button id="editBudget">Cambiar presupuesto</button></div>
+      <div class="bar" aria-hidden="true"><i id="barFixPaid" style="width:0"></i><i id="barFixPend" style="width:0"></i><i id="barVar" style="width:0"></i></div>
+    </div>
+    <div class="full calc" id="calc"></div>
+    <div class="full">
+      <div class="meta"><span>Tu sueldo o lo que tengas para el mes.</span><button id="editBudget">Cambiar plata del mes</button></div>
       <div class="modal" id="budgetBox" hidden>
-        <input id="budgetIn" inputmode="numeric" placeholder="Presupuesto mensual" aria-label="Presupuesto mensual">
+        <input id="budgetIn" inputmode="numeric" placeholder="Plata del mes" aria-label="Plata del mes">
         <button id="budgetOk">Listo</button>
       </div>
     </div>
@@ -189,8 +233,40 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
   <div class="stats">
     <div class="stat"><b class="num" id="stStreak">0</b><span>días de racha</span></div>
     <div class="stat"><b class="num" id="stCount">0</b><span>gastos del mes</span></div>
-    <div class="stat"><b class="num" id="stAvg">$0</b><span>promedio por día</span></div>
+    <div class="stat"><b class="num" id="stAvg">$0</b><span>gasto diario promedio</span></div>
   </div>
+
+  <section class="panel" id="fxPanel" aria-labelledby="fxH">
+    <div class="phead"><h2 id="fxH">Gastos fijos</h2><span class="opt num" id="fxSum" hidden></span></div>
+    <p class="hint" id="fxHint"></p>
+    <ul class="items fxlist" id="fxList"></ul>
+    <details class="fxadd" id="fxAdd">
+      <summary id="fxSummary">＋ Agregar gasto fijo</summary>
+      <div class="fxform">
+        <div class="chips" id="fxChips">
+          <button type="button" class="chip" data-n="Alquiler">Alquiler</button>
+          <button type="button" class="chip" data-n="Internet">Internet</button>
+          <button type="button" class="chip" data-n="Celular">Celular</button>
+          <button type="button" class="chip" data-n="Luz">Luz</button>
+          <button type="button" class="chip" data-n="Gas">Gas</button>
+          <button type="button" class="chip" data-n="Streaming">Streaming</button>
+          <button type="button" class="chip" data-n="Gimnasio" data-c="salud">Gimnasio</button>
+        </div>
+        <input id="fxName" class="field" maxlength="40" placeholder="Nombre, ej. Alquiler" aria-label="Nombre del gasto fijo" autocomplete="off">
+        <div class="two">
+          <input id="fxAmt" class="field num" inputmode="decimal" placeholder="Monto $" aria-label="Monto del gasto fijo" autocomplete="off">
+          <input id="fxDay" class="field num" inputmode="numeric" placeholder="Vence el día" aria-label="Día del mes en que vence" autocomplete="off">
+        </div>
+        <select id="fxCat" class="field" aria-label="Categoría"></select>
+        <p class="err" id="fxErr" hidden></p>
+        <div class="two">
+          <button class="sheetBtn" id="fxSave" type="button">Guardar fijo</button>
+          <button class="sheetBtn alt" id="fxCancel" type="button">Cancelar</button>
+        </div>
+        <button class="linkish danger" id="fxDel" type="button" hidden>Borrar este gasto fijo</button>
+      </div>
+    </details>
+  </section>
 
   <section class="panel" aria-labelledby="addH">
     <h2 id="addH">Alimentá al chanchito</h2>
@@ -262,7 +338,7 @@ const dkey=d=>d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());
 const today=()=>dkey(new Date());
 
 let gastos=[];               // {id,monto,cat,nota,fecha,ts}
-let ajustes={presupuesto:300000,checkins:[]};
+let ajustes={presupuesto:300000,checkins:[],fijos:[]};
 let view=new Date(); view.setDate(1);
 let selCat="comida";
 
@@ -271,7 +347,7 @@ const LS={get(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}
           set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
 const store={
   kind:"local",
-  async init(){gastos=LS.get("cg_gastos",[]);ajustes=Object.assign(ajustes,LS.get("cg_ajustes",{}));render()},
+  async init(){gastos=LS.get("cg_gastos",[]);ajustes=Object.assign(ajustes,LS.get("cg_ajustes",{}));if(!Array.isArray(ajustes.fijos))ajustes.fijos=[];render()},
   async add(g){gastos.push(g);LS.set("cg_gastos",gastos)},
   async addMany(list){gastos=gastos.concat(list);LS.set("cg_gastos",gastos)},
   async del(id){gastos=gastos.filter(g=>g.id!==id);LS.set("cg_gastos",gastos)},
@@ -317,41 +393,106 @@ const EXAMPLES=[
   {id:"ej2",monto:1200,cat:"transporte",nota:"SUBE",fecha:today(),ex:1},
   {id:"ej3",monto:18900,cat:"super",nota:"Compra semanal",fecha:today(),ex:1}];
 
+/* ---------- Gastos fijos: helpers ---------- */
+const isFx=g=>String(g.id).startsWith("fx-");
+const fxGid=(f,mk)=>"fx-"+f.id+"-"+mk;
+const daysIn=(y,m)=>new Date(y,m+1,0).getDate();
+const money=n=>(n<0?"− ":"")+fmt(Math.abs(n));
+function fxDay(f,y,m){return Math.min(Math.max(1,+f.dia||1),daysIn(y,m))}
+
 /* ---------- Render ---------- */
 function render(){
-  const mk=monthKey(view);
+  const now=new Date(), mk=monthKey(view), curMk=monthKey(now);
   $("monthLbl").textContent=view.toLocaleDateString("es-AR",{month:"short",year:"numeric"}).replace(".","");
-  const isCur=mk===monthKey(new Date());
+  const isCur=mk===curMk;
   $("nextM").disabled=isCur;
   const mes=gastos.filter(g=>g.fecha&&g.fecha.startsWith(mk)).sort((a,b)=>b.fecha.localeCompare(a.fecha)||(b.ts||0)-(a.ts||0));
+  const ids=new Set(mes.map(g=>g.id));
   const total=mes.reduce((s,g)=>s+(+g.monto||0),0);
+  const fixPaid=mes.filter(isFx).reduce((s,g)=>s+(+g.monto||0),0);
+  const variable=total-fixPaid;
+  const fx=(ajustes.fijos||[]).slice().sort((a,b)=>(+a.dia||0)-(+b.dia||0));
+  const pendList=isCur?fx.filter(f=>!ids.has(fxGid(f,mk))):[];
+  const pend=pendList.reduce((s,f)=>s+(+f.monto||0),0);
   const pres=+ajustes.presupuesto||0;
-  const pct=pres?total/pres:0;
-  const left=pres-total;
-  $("left").textContent=(left<0?"−":"")+fmt(Math.abs(left));
-  $("left").style.color=left<0?"var(--red)":"var(--ink)";
-  const mood=pct<.6?"feliz":pct<.9?"nervioso":"triste";
+  const disp=pres-total-pend;
+  const used=total+pend;
+  const pct=pres?used/pres:(used>0?1:0);
+
+  // Número grande
+  $("leftLbl").textContent=isCur?"Disponible para gastar":(disp>=0?"Te sobró":"Te pasaste");
+  $("left").textContent=isCur?money(disp):fmt(Math.abs(disp));
+  $("left").style.color=disp<0?"var(--red)":"var(--ink)";
+
+  // Cuánto podés gastar hoy y por día
+  const tb=$("todayBox"),pd=$("perDay");
+  if(isCur){
+    const rest=daysIn(now.getFullYear(),now.getMonth())-now.getDate()+1;
+    const hoyVar=mes.filter(g=>g.fecha===today()&&!isFx(g)).reduce((s,g)=>s+(+g.monto||0),0);
+    const porDia=Math.max(0,(disp+hoyVar)/rest);
+    const hoyQueda=porDia-hoyVar;
+    tb.hidden=false;pd.hidden=false;
+    if(disp<=0){
+      tb.className="todayBox bad";tb.textContent="Este mes ya no te queda margen";
+      pd.textContent=pend?"Contando los fijos que faltan pagar.":"Frená los gastos hasta que entre plata.";
+    }else if(hoyQueda>=0){
+      tb.className="todayBox";tb.innerHTML="Hoy podés gastar <b class=\"num\">"+fmt(hoyQueda)+"</b>";
+      pd.textContent="≈ "+fmt(porDia)+" por día · "+(rest===1?"último día del mes":"quedan "+rest+" días");
+    }else{
+      tb.className="todayBox bad";tb.innerHTML="Hoy te pasaste <b class=\"num\">"+fmt(-hoyQueda)+"</b> del promedio";
+      pd.textContent=rest>1?"Para compensar: ≈ "+fmt(disp/(rest-1))+" por día desde mañana.":"Último día del mes.";
+    }
+  }else{tb.hidden=true;pd.hidden=true}
+
+  // Chanchito
+  const mood=disp<0?"triste":pct<.6?"feliz":pct<.9?"nervioso":"triste";
   $("pig").innerHTML=pigSVG(mood);
-  $("mood").textContent=mes.length===0?"Panza vacía. ¡Cargá tu primer gasto!":mood==="feliz"?"Chanchito feliz, vas bárbaro.":mood==="nervioso"?"Ojo, el chanchito transpira.":left<0?"Te pasaste del presupuesto. Chanchito llora.":"Casi sin margen. Frená un poco.";
-  const bf=$("barFill");bf.style.width=Math.min(100,pct*100)+"%";
-  bf.style.background=mood==="feliz"?"var(--mint)":mood==="nervioso"?"var(--sun)":"var(--red)";
-  $("spentTx").textContent="Gastado "+fmt(total)+" de "+fmt(pres);
+  const vacio=!mes.length&&!fx.length;
+  $("mood").textContent=vacio?"Panza vacía. ¡Cargá tu primer gasto!"
+    :mood==="feliz"?"Chanchito feliz, vas bárbaro."
+    :mood==="nervioso"?"Ojo, el chanchito transpira."
+    :disp<0?(isCur&&pend?"Con los fijos que faltan, no te alcanza. Chanchito llora.":"Te pasaste de la plata del mes. Chanchito llora.")
+    :"Casi sin margen. Frená un poco.";
+  const moodColor=mood==="feliz"?"var(--mint)":mood==="nervioso"?"var(--sun)":"var(--red)";
+  const scale=Math.max(pres,used)||1;
+  $("barFixPaid").style.width=fixPaid/scale*100+"%";
+  $("barFixPend").style.width=pend/scale*100+"%";
+  const bv=$("barVar");bv.style.width=variable/scale*100+"%";bv.style.background=moodColor;
+
+  // La cuenta
+  const rows=[["Plata del mes",pres,""]];
+  if(fixPaid||fx.length)rows.push(["Fijos pagados",-fixPaid,'<i class="dot" style="background:var(--grape)"></i>']);
+  if(isCur&&pend)rows.push(["Fijos por pagar ("+pendList.length+")",-pend,'<i class="dot stripe"></i>']);
+  rows.push(["Gastos del día a día",-variable,'<i class="dot" style="background:'+moodColor+'"></i>']);
+  $("calc").innerHTML=rows.map(([t,v,d])=>`<span>${d}${t}</span><b class="num">${money(v)}</b>`).join("")
+    +`<span class="tot">${isCur?"Disponible":(disp>=0?"Te sobró":"Te pasaste")}</span><b class="tot" style="color:${disp<0?"var(--red)":"var(--ink)"}">${isCur?money(disp):fmt(Math.abs(disp))}</b>`;
+
+  // Números chicos
   $("stStreak").textContent=streak();
   $("stCount").textContent=mes.length;
-  const daysElapsed=isCur?new Date().getDate():new Date(view.getFullYear(),view.getMonth()+1,0).getDate();
-  $("stAvg").textContent=fmt(total/daysElapsed).replace(" ","");
+  const daysElapsed=isCur?now.getDate():daysIn(view.getFullYear(),view.getMonth());
+  $("stAvg").textContent=fmt(variable/daysElapsed).replace(" ","");
 
-  // Recordatorio dentro de la app
-  const h=new Date().getHours();
-  const nudge=!loggedToday();
-  $("nudge").hidden=!nudge;
-  $("nudgeTx").textContent=h>=19?"¡Oink! Se termina el día y no cargaste nada. ¿Gastaste algo hoy?":"Hoy todavía no cargaste nada. Cuando gastes, anotalo al toque.";
+  // Recordatorio dentro de la app (siempre sobre el mes actual)
+  const td=now.getDate();
+  const vencidos=(ajustes.fijos||[]).filter(f=>!gastos.some(g=>g.id===fxGid(f,curMk))&&fxDay(f,now.getFullYear(),now.getMonth())<=td);
+  const h=now.getHours(),nb=$("nudgeBtn");
+  if(vencidos.length){
+    const f=vencidos[0],d=fxDay(f,now.getFullYear(),now.getMonth());
+    $("nudge").hidden=false;nb.dataset.target="fx";nb.textContent="Ver fijos";
+    $("nudgeTx").textContent=(d===td?"Hoy vence ":"Ya venció ")+f.nombre+" ("+fmt(f.monto)+")"+(vencidos.length>1?" y "+(vencidos.length-1)+" más":"")+". ¿Ya lo pagaste?";
+  }else{
+    $("nudge").hidden=loggedToday();nb.dataset.target="add";nb.textContent="Cargar";
+    $("nudgeTx").textContent=h>=19?"¡Oink! Se termina el día y no cargaste nada. ¿Gastaste algo hoy?":"Hoy todavía no cargaste nada. Cuando gastes, anotalo al toque.";
+  }
+
+  renderFx(fx,mk,isCur,ids);
 
   // Barras por categoría
   const byCat={};mes.forEach(g=>byCat[g.cat]=(byCat[g.cat]||0)+(+g.monto||0));
-  const rows=Object.entries(byCat).sort((a,b)=>b[1]-a[1]);
-  const max=rows.length?rows[0][1]:1;
-  $("cbars").innerHTML=rows.length?rows.map(([id,v])=>{const c=catById(id);return `<div class="cbar"><span>${c.ic} ${c.n}</span><div class="t"><i style="width:${v/max*100}%;background:${c.c}"></i></div><span class="v num">${fmt(v)}</span></div>`}).join("")
+  const crow=Object.entries(byCat).sort((a,b)=>b[1]-a[1]);
+  const max=crow.length?crow[0][1]:1;
+  $("cbars").innerHTML=crow.length?crow.map(([id,v])=>{const c=catById(id);return `<div class="cbar"><span>${c.ic} ${c.n}</span><div class="t"><i style="width:${v/max*100}%;background:${c.c}"></i></div><span class="v num">${fmt(v)}</span></div>`}).join("")
     :`<p class="empty">Cuando cargues gastos vas a ver acá en qué categoría se te va más.</p>`;
 
   // Lista
@@ -365,12 +506,34 @@ function render(){
     const sum=items.reduce((s,g)=>s+(+g.monto||0),0);
     html+=`<div class="day"><span>${lbl}</span><span class="num">${fmt(sum)}</span></div><ul class="items">`;
     for(const g of items){const c=catById(g.cat);
+      const tag=g.ex?'<span class="tag">Ejemplo</span>':isFx(g)?'<span class="tag">Fijo</span>':"";
       html+=`<li class="item${g.ex?" example":""}"><div class="ic" style="background:color-mix(in srgb, ${c.c} 22%, transparent)">${c.ic}</div>
-      <div class="tx"><b>${c.n}${g.ex?'<span class="tag">Ejemplo</span>':""}</b><small>${esc(g.nota||"")}</small></div>
-      <span class="am num">${fmt(g.monto)}</span>${g.ex?"<span></span>":`<button class="del" data-id="${g.id}" aria-label="Borrar gasto">✕</button>`}</li>`}
+      <div class="tx"><b>${c.n}${tag}</b><small>${esc(g.nota||"")}</small></div>
+      <span class="am num">${fmt(g.monto)}</span>${g.ex?"<span></span>":`<button class="del" data-id="${esc(g.id)}" aria-label="Borrar gasto">✕</button>`}</li>`}
     html+="</ul>";
   }
   $("list").innerHTML=html;
+}
+
+function renderFx(fx,mk,isCur,ids){
+  const y=view.getFullYear(),m=view.getMonth(),td=new Date().getDate();
+  const all=fx.reduce((s,f)=>s+(+f.monto||0),0);
+  const sum=$("fxSum");sum.hidden=!fx.length;sum.textContent=fmt(all)+" /mes";
+  $("fxHint").textContent=!fx.length
+    ?"Cargá lo que pagás todos los meses: alquiler, internet, celular. La app lo reserva de tu plata del mes y te muestra lo que de verdad podés gastar."
+    :isCur?"Tocá Pagar cuando lo pagues y se carga solo como gasto.":"Así quedaron los fijos de este mes.";
+  $("fxList").innerHTML=fx.map(f=>{
+    const c=catById(f.cat),paid=ids.has(fxGid(f,mk)),d=fxDay(f,y,m);
+    let st;
+    if(paid)st='<span class="st ok">Pagado</span>';
+    else if(!isCur)st='<span class="st late">No pagado</span>';
+    else if(d<td)st='<span class="st late">Venció el '+d+'</span>';
+    else if(d===td)st='<span class="st soon">Vence hoy</span>';
+    else if(d-td<=3)st='<span class="st soon">Vence en '+(d-td)+(d-td===1?" día":" días")+'</span>';
+    else st='<span class="st">Vence el día '+d+'</span>';
+    return `<li class="item fx"><div class="ic" style="background:color-mix(in srgb, ${c.c} 22%, transparent)">${c.ic}</div>
+      <button class="fxEdit" type="button" data-fx="${esc(f.id)}" aria-label="Editar ${esc(f.nombre)}"><b>${esc(f.nombre)}</b><small><span class="num">${fmt(f.monto)}</span>${st}</small></button>
+      <button class="pay${paid?" done":""}" type="button" data-fx="${esc(f.id)}">${paid?"✓ Pagado":"Pagar"}</button></li>`}).join("");
 }
 function esc(s){return String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]))}
 
@@ -408,12 +571,59 @@ $("list").addEventListener("click",async e=>{
   if(!b.classList.contains("armed")){b.classList.add("armed");b.textContent="¿Borrar?";setTimeout(()=>{if(b.isConnected){b.classList.remove("armed");b.textContent="✕"}},3000);return}
   try{await store.del(b.dataset.id);if(store.kind==="local")render();toast("Gasto borrado")}catch(x){toast("No se pudo borrar")}
 });
-$("nudgeBtn").addEventListener("click",()=>{$("amt").focus();$("amt").scrollIntoView({behavior:"smooth",block:"center"})});
+$("nudgeBtn").addEventListener("click",()=>{if($("nudgeBtn").dataset.target==="fx"){$("fxPanel").scrollIntoView({behavior:"smooth",block:"start"});return}$("amt").focus();$("amt").scrollIntoView({behavior:"smooth",block:"center"})});
+
+/* ---------- Gastos fijos: interacción ---------- */
+let editingFx=null;
+$("fxCat").innerHTML=CATS.map(c=>`<option value="${c.id}">${c.ic} ${c.n}</option>`).join("");
+$("fxCat").value="servicios";
+function fxErr(t){const e=$("fxErr");e.textContent=t||"";e.hidden=!t}
+function resetFxForm(){editingFx=null;$("fxName").value="";$("fxAmt").value="";$("fxDay").value="";$("fxCat").value="servicios";
+  $("fxSave").textContent="Guardar fijo";$("fxSummary").textContent="＋ Agregar gasto fijo";$("fxDel").hidden=true;$("fxDel").textContent="Borrar este gasto fijo";$("fxDel").classList.remove("armed");fxErr("")}
+$("fxChips").addEventListener("click",e=>{const b=e.target.closest(".chip");if(!b)return;$("fxName").value=b.dataset.n;$("fxCat").value=b.dataset.c||"servicios";$("fxAmt").focus()});
+$("fxSave").addEventListener("click",async()=>{
+  const nombre=$("fxName").value.trim(),monto=parseMonto($("fxAmt").value),dia=parseInt($("fxDay").value,10),cat=$("fxCat").value;
+  if(!nombre){fxErr("Poné un nombre, por ejemplo Alquiler.");$("fxName").focus();return}
+  if(!(monto>0)){fxErr("Poné un monto mayor a cero.");$("fxAmt").focus();return}
+  if(!(dia>=1&&dia<=31)){fxErr("El día tiene que ser un número del 1 al 31.");$("fxDay").focus();return}
+  const f=editingFx&&ajustes.fijos.find(x=>x.id===editingFx);
+  if(f)Object.assign(f,{nombre,monto:Math.round(monto*100)/100,dia,cat});
+  else ajustes.fijos.push({id:"f"+Date.now().toString(36)+Math.random().toString(36).slice(2,5),nombre,monto:Math.round(monto*100)/100,dia,cat});
+  await store.saveAjustes();
+  toast((f?"Actualizado: ":"Fijo agregado: ")+nombre+" "+fmt(monto));
+  resetFxForm();$("fxAdd").open=false;render();
+});
+$("fxCancel").addEventListener("click",()=>{resetFxForm();$("fxAdd").open=false});
+$("fxDel").addEventListener("click",async()=>{
+  const b=$("fxDel");
+  if(!b.classList.contains("armed")){b.classList.add("armed");b.textContent="Tocá de nuevo para borrarlo";setTimeout(()=>{if(b.classList.contains("armed")){b.classList.remove("armed");b.textContent="Borrar este gasto fijo"}},3000);return}
+  const f=ajustes.fijos.find(x=>x.id===editingFx);
+  ajustes.fijos=ajustes.fijos.filter(x=>x.id!==editingFx);await store.saveAjustes();
+  toast("Borré "+(f?f.nombre:"el gasto fijo")+". Lo que ya pagaste queda en el historial.");
+  resetFxForm();$("fxAdd").open=false;render();
+});
+$("fxList").addEventListener("click",async e=>{
+  const ed=e.target.closest(".fxEdit");
+  if(ed){const f=ajustes.fijos.find(x=>x.id===ed.dataset.fx);if(!f)return;
+    resetFxForm();editingFx=f.id;$("fxName").value=f.nombre;$("fxAmt").value=f.monto;$("fxDay").value=f.dia;$("fxCat").value=f.cat;
+    $("fxSave").textContent="Guardar cambios";$("fxSummary").textContent="Editando: "+f.nombre;$("fxDel").hidden=false;
+    $("fxAdd").open=true;$("fxAdd").scrollIntoView({behavior:"smooth",block:"center"});return}
+  const b=e.target.closest(".pay");if(!b)return;
+  const f=ajustes.fijos.find(x=>x.id===b.dataset.fx);if(!f)return;
+  const mk=monthKey(view),gid=fxGid(f,mk);
+  if(gastos.some(g=>g.id===gid)){
+    if(!b.classList.contains("armed")){b.classList.add("armed");b.textContent="¿Desmarcar?";setTimeout(()=>{if(b.isConnected&&b.classList.contains("armed")){b.classList.remove("armed");b.textContent="✓ Pagado"}},3000);return}
+    await store.del(gid);render();toast(f.nombre+" vuelve a pendiente");return}
+  const isCur=mk===monthKey(new Date());
+  const fecha=isCur?today():mk+"-"+pad(fxDay(f,view.getFullYear(),view.getMonth()));
+  await store.add({id:gid,monto:+f.monto,cat:f.cat,nota:f.nombre,fecha,ts:Date.now(),fijo:f.id});
+  render();coin();toast("Pagado: "+f.nombre+" "+fmt(f.monto));
+});
 $("prevM").addEventListener("click",()=>{view.setMonth(view.getMonth()-1);render()});
 $("nextM").addEventListener("click",()=>{view.setMonth(view.getMonth()+1);render()});
 $("editBudget").addEventListener("click",()=>{const b=$("budgetBox");b.hidden=!b.hidden;if(!b.hidden){$("budgetIn").value=ajustes.presupuesto;$("budgetIn").focus()}});
-$("budgetOk").addEventListener("click",async()=>{const v=parseMonto($("budgetIn").value);if(!(v>0)){toast("Poné un presupuesto mayor a cero");return}
-  ajustes.presupuesto=Math.round(v);$("budgetBox").hidden=true;render();try{await store.saveAjustes();toast("Presupuesto: "+fmt(v))}catch(x){toast("No se pudo guardar")}});
+$("budgetOk").addEventListener("click",async()=>{const v=parseMonto($("budgetIn").value);if(!(v>0)){toast("Poné un monto mayor a cero");return}
+  ajustes.presupuesto=Math.round(v);$("budgetBox").hidden=true;render();try{await store.saveAjustes();toast("Plata del mes: "+fmt(v))}catch(x){toast("No se pudo guardar")}});
 
 /* ---------- Sincronización con Google Sheets (Apps Script) ---------- */
 let sync=LS.get("cg_sync",null); // {url,key}
