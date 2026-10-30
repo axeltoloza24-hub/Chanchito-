@@ -57,8 +57,9 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 .month b{min-width:96px;text-align:center;text-transform:capitalize}
 
 /* Recordatorio */
-.nudge{display:flex;gap:12px;align-items:center;background:var(--sun-soft);border:2px dashed var(--sun);border-radius:16px;padding:12px 14px;animation:wiggle 2.4s ease-in-out infinite}
-.nudge p{margin:0;flex:1;min-width:0;font-weight:500}
+.nudge{display:flex;flex-wrap:wrap;gap:10px 12px;align-items:center;background:var(--sun-soft);border:2px dashed var(--sun);border-radius:16px;padding:12px 14px;animation:wiggle 2.4s ease-in-out infinite}
+.nudge p{margin:0;flex:1 1 200px;min-width:0;font-weight:500}
+.nbtns{display:flex;gap:8px;flex-wrap:wrap}
 .nudge button{border:2px solid var(--ink);background:var(--card);border-radius:999px;padding:6px 12px;font-weight:600;white-space:nowrap}
 @keyframes wiggle{0%,90%,100%{transform:rotate(0)}93%{transform:rotate(-1deg)}96%{transform:rotate(1deg)}}
 
@@ -113,6 +114,15 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 .chip{border:2px solid var(--line);background:var(--card);border-radius:999px;padding:4px 10px;font-size:13px;font-weight:600}
 select.field{appearance:auto}
 .danger{color:var(--red)!important}
+.dlabel{display:flex;flex-direction:column;gap:4px;min-width:0}
+.dlabel>span{font-size:12px;color:var(--muted);font-weight:600}
+.dlabel .field{width:100%}
+.fxnote{font-size:12px;color:var(--muted);margin:0}
+.alerts{display:flex;flex-direction:column;gap:8px;margin-top:14px;padding-top:12px;border-top:2px dashed var(--line)}
+.arow{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-weight:600}
+.arow .field{padding:6px 10px}
+.alerts .sheetBtn{font-size:15px;padding:10px}
+.alerts p{margin:0;font-size:13px;color:var(--muted)}
 .meta{display:flex;justify-content:space-between;gap:8px;font-size:13px;color:var(--muted);margin-top:6px;flex-wrap:wrap}
 .meta button{background:none;border:0;padding:0;color:var(--grape);font-weight:600;text-decoration:underline}
 
@@ -205,7 +215,7 @@ select.field{appearance:auto}
 
   <div class="nudge" id="nudge" hidden>
     <p id="nudgeTx">¡Ey! Hoy todavía no cargaste nada. ¿Gastaste algo?</p>
-    <button id="nudgeBtn">Cargar</button>
+    <div class="nbtns"><button id="nudgePay" hidden>Ya lo pagué</button><button id="nudgeBtn">Cargar</button></div>
   </div>
 
   <section class="panel hero" aria-label="Resumen del mes">
@@ -240,6 +250,15 @@ select.field{appearance:auto}
     <div class="phead"><h2 id="fxH">Gastos fijos</h2><span class="opt num" id="fxSum" hidden></span></div>
     <p class="hint" id="fxHint"></p>
     <ul class="items fxlist" id="fxList"></ul>
+    <div class="alerts" id="fxAlerts" hidden>
+      <div class="arow"><label for="avisoDias">🔔 Avisarme</label>
+        <select id="avisoDias" class="field">
+          <option value="0">el mismo día</option><option value="1">1 día antes</option><option value="2">2 días antes</option>
+          <option value="3">3 días antes</option><option value="5">5 días antes</option><option value="7">7 días antes</option>
+        </select></div>
+      <button class="sheetBtn alt" id="notifBtn" type="button">Activar avisos en el celular</button>
+      <p id="notifMsg">Solo te aviso de los fijos que todavía no pagaste.</p>
+    </div>
     <details class="fxadd" id="fxAdd">
       <summary id="fxSummary">＋ Agregar gasto fijo</summary>
       <div class="fxform">
@@ -254,9 +273,10 @@ select.field{appearance:auto}
         </div>
         <input id="fxName" class="field" maxlength="40" placeholder="Nombre, ej. Alquiler" aria-label="Nombre del gasto fijo" autocomplete="off">
         <div class="two">
-          <input id="fxAmt" class="field num" inputmode="decimal" placeholder="Monto $" aria-label="Monto del gasto fijo" autocomplete="off">
-          <input id="fxDay" class="field num" inputmode="numeric" placeholder="Vence el día" aria-label="Día del mes en que vence" autocomplete="off">
+          <label class="dlabel"><span>Monto</span><input id="fxAmt" class="field num" inputmode="decimal" placeholder="$ 0" autocomplete="off"></label>
+          <label class="dlabel"><span>Próximo vencimiento</span><input id="fxDate" class="field" type="date"></label>
         </div>
+        <p class="fxnote">Se repite todos los meses ese mismo día.</p>
         <select id="fxCat" class="field" aria-label="Categoría"></select>
         <p class="err" id="fxErr" hidden></p>
         <div class="two">
@@ -278,7 +298,7 @@ select.field{appearance:auto}
         <input id="date" type="date" aria-label="Fecha">
       </div>
       <p class="err" id="err" hidden></p>
-      <button class="go" id="go" type="submit">¡Oink! Guardar gasto</button>
+      <button class="go" id="go" type="button">¡Oink! Guardar gasto</button>
       <button class="nospend" id="nospend" type="button">Hoy no gasté nada (cuenta para la racha)</button>
     </form>
   </section>
@@ -338,7 +358,7 @@ const dkey=d=>d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());
 const today=()=>dkey(new Date());
 
 let gastos=[];               // {id,monto,cat,nota,fecha,ts}
-let ajustes={presupuesto:300000,checkins:[],fijos:[]};
+let ajustes={presupuesto:300000,checkins:[],fijos:[],avisoDias:3};
 let view=new Date(); view.setDate(1);
 let selCat="comida";
 
@@ -347,11 +367,11 @@ const LS={get(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}
           set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
 const store={
   kind:"local",
-  async init(){gastos=LS.get("cg_gastos",[]);ajustes=Object.assign(ajustes,LS.get("cg_ajustes",{}));if(!Array.isArray(ajustes.fijos))ajustes.fijos=[];render()},
-  async add(g){gastos.push(g);LS.set("cg_gastos",gastos)},
-  async addMany(list){gastos=gastos.concat(list);LS.set("cg_gastos",gastos)},
-  async del(id){gastos=gastos.filter(g=>g.id!==id);LS.set("cg_gastos",gastos)},
-  async saveAjustes(){LS.set("cg_ajustes",ajustes)}
+  async init(){gastos=LS.get("cg_gastos",[]);ajustes=Object.assign(ajustes,LS.get("cg_ajustes",{}));if(!Array.isArray(ajustes.fijos))ajustes.fijos=[];if(!(ajustes.avisoDias>=0))ajustes.avisoDias=3;render();syncSW()},
+  async add(g){gastos.push(g);LS.set("cg_gastos",gastos);syncSW()},
+  async addMany(list){gastos=gastos.concat(list);LS.set("cg_gastos",gastos);syncSW()},
+  async del(id){gastos=gastos.filter(g=>g.id!==id);LS.set("cg_gastos",gastos);syncSW()},
+  async saveAjustes(){LS.set("cg_ajustes",ajustes);syncSW()}
 };
 try{navigator.storage&&navigator.storage.persist&&navigator.storage.persist()}catch(e){}
 
@@ -399,6 +419,36 @@ const fxGid=(f,mk)=>"fx-"+f.id+"-"+mk;
 const daysIn=(y,m)=>new Date(y,m+1,0).getDate();
 const money=n=>(n<0?"− ":"")+fmt(Math.abs(n));
 function fxDay(f,y,m){return Math.min(Math.max(1,+f.dia||1),daysIn(y,m))}
+// Próximo vencimiento sin pagar de cada fijo (si este mes ya está pagado, mira el mes que viene)
+const fxActive=(f,mk)=>!f.desde||mk>=f.desde;
+function fxNext(f,now){
+  const all=new Set(gastos.map(g=>g.id));
+  let y=now.getFullYear(),m=now.getMonth();
+  if(f.desde&&f.desde>monthKey(now)){y=+f.desde.slice(0,4);m=+f.desde.slice(5,7)-1}
+  let gid=fxGid(f,y+"-"+pad(m+1));
+  if(all.has(gid)){m++;if(m>11){m=0;y++}gid=fxGid(f,y+"-"+pad(m+1));if(all.has(gid))return null}
+  const due=new Date(y,m,fxDay(f,y,m));
+  const t0=new Date(now.getFullYear(),now.getMonth(),now.getDate());
+  return {f,gid,due,left:Math.round((due-t0)/864e5)};
+}
+function fxDue(now){
+  const av=+ajustes.avisoDias||0;
+  return (ajustes.fijos||[]).map(f=>fxNext(f,now)).filter(x=>x&&x.left<=av).sort((a,b)=>a.left-b.left);
+}
+function dueText(x){
+  const n=x.f.nombre+" ("+fmt(x.f.monto)+")";
+  return x.left<0?"Ya venció "+n:x.left===0?"Hoy vence "+n:"En "+x.left+(x.left===1?" día":" días")+" vence "+n;
+}
+/* Copia del estado para el aviso en segundo plano (el service worker no puede leer localStorage) */
+let STATE_URL=null;try{if(/^https?:$/.test(location.protocol))STATE_URL=new URL("__state",location.href).href}catch(e){}
+function syncSW(){
+  try{
+    if(!STATE_URL||!("caches" in window))return;
+    const st={fijos:(ajustes.fijos||[]).map(f=>({id:f.id,nombre:f.nombre,monto:+f.monto,dia:+f.dia,desde:f.desde||""})),
+      pagados:gastos.filter(isFx).map(g=>g.id),avisoDias:+ajustes.avisoDias||0};
+    caches.open("chanchito-state").then(c=>c.put(STATE_URL,new Response(JSON.stringify(st),{headers:{"Content-Type":"application/json"}}))).catch(()=>{});
+  }catch(e){}
+}
 
 /* ---------- Render ---------- */
 function render(){
@@ -407,12 +457,12 @@ function render(){
   const isCur=mk===curMk;
   $("nextM").disabled=isCur;
   const mes=gastos.filter(g=>g.fecha&&g.fecha.startsWith(mk)).sort((a,b)=>b.fecha.localeCompare(a.fecha)||(b.ts||0)-(a.ts||0));
-  const ids=new Set(mes.map(g=>g.id));
+  const ids=new Set(gastos.map(g=>g.id));
   const total=mes.reduce((s,g)=>s+(+g.monto||0),0);
   const fixPaid=mes.filter(isFx).reduce((s,g)=>s+(+g.monto||0),0);
   const variable=total-fixPaid;
   const fx=(ajustes.fijos||[]).slice().sort((a,b)=>(+a.dia||0)-(+b.dia||0));
-  const pendList=isCur?fx.filter(f=>!ids.has(fxGid(f,mk))):[];
+  const pendList=isCur?fx.filter(f=>fxActive(f,mk)&&!ids.has(fxGid(f,mk))):[];
   const pend=pendList.reduce((s,f)=>s+(+f.monto||0),0);
   const pres=+ajustes.presupuesto||0;
   const disp=pres-total-pend;
@@ -474,14 +524,15 @@ function render(){
   $("stAvg").textContent=fmt(variable/daysElapsed).replace(" ","");
 
   // Recordatorio dentro de la app (siempre sobre el mes actual)
-  const td=now.getDate();
-  const vencidos=(ajustes.fijos||[]).filter(f=>!gastos.some(g=>g.id===fxGid(f,curMk))&&fxDay(f,now.getFullYear(),now.getMonth())<=td);
-  const h=now.getHours(),nb=$("nudgeBtn");
-  if(vencidos.length){
-    const f=vencidos[0],d=fxDay(f,now.getFullYear(),now.getMonth());
+  const due=fxDue(now);
+  const h=now.getHours(),nb=$("nudgeBtn"),np=$("nudgePay");
+  if(due.length){
+    const x=due[0];
     $("nudge").hidden=false;nb.dataset.target="fx";nb.textContent="Ver fijos";
-    $("nudgeTx").textContent=(d===td?"Hoy vence ":"Ya venció ")+f.nombre+" ("+fmt(f.monto)+")"+(vencidos.length>1?" y "+(vencidos.length-1)+" más":"")+". ¿Ya lo pagaste?";
+    np.hidden=false;np.dataset.fx=x.f.id;np.dataset.gid=x.gid;
+    $("nudgeTx").textContent=dueText(x)+(due.length>1?" y "+(due.length-1)+" más":"")+". ¿Ya lo pagaste?";
   }else{
+    np.hidden=true;
     $("nudge").hidden=loggedToday();nb.dataset.target="add";nb.textContent="Cargar";
     $("nudgeTx").textContent=h>=19?"¡Oink! Se termina el día y no cargaste nada. ¿Gastaste algo hoy?":"Hoy todavía no cargaste nada. Cuando gastes, anotalo al toque.";
   }
@@ -519,21 +570,23 @@ function renderFx(fx,mk,isCur,ids){
   const y=view.getFullYear(),m=view.getMonth(),td=new Date().getDate();
   const all=fx.reduce((s,f)=>s+(+f.monto||0),0);
   const sum=$("fxSum");sum.hidden=!fx.length;sum.textContent=fmt(all)+" /mes";
+  $("fxAlerts").hidden=!fx.length;$("avisoDias").value=String(+ajustes.avisoDias||0);
   $("fxHint").textContent=!fx.length
     ?"Cargá lo que pagás todos los meses: alquiler, internet, celular. La app lo reserva de tu plata del mes y te muestra lo que de verdad podés gastar."
     :isCur?"Tocá Pagar cuando lo pagues y se carga solo como gasto.":"Así quedaron los fijos de este mes.";
   $("fxList").innerHTML=fx.map(f=>{
     const c=catById(f.cat),paid=ids.has(fxGid(f,mk)),d=fxDay(f,y,m);
-    let st;
-    if(paid)st='<span class="st ok">Pagado</span>';
+    let st,active=fxActive(f,mk);
+    if(!paid&&!active){const dd=new Date(+f.desde.slice(0,4),+f.desde.slice(5,7)-1,1),mes=dd.toLocaleDateString("es-AR",{month:"long"});st=ids.has(fxGid(f,f.desde))?'<span class="st ok">'+mes[0].toUpperCase()+mes.slice(1)+' ya pagado</span>':'<span class="st">Empieza el '+fxDay(f,dd.getFullYear(),dd.getMonth())+" de "+mes+'</span>'}
+    else if(paid)st='<span class="st ok">Pagado</span>';
     else if(!isCur)st='<span class="st late">No pagado</span>';
     else if(d<td)st='<span class="st late">Venció el '+d+'</span>';
     else if(d===td)st='<span class="st soon">Vence hoy</span>';
-    else if(d-td<=3)st='<span class="st soon">Vence en '+(d-td)+(d-td===1?" día":" días")+'</span>';
+    else if(d-td<=Math.max(3,+ajustes.avisoDias||0))st='<span class="st soon">Vence en '+(d-td)+(d-td===1?" día":" días")+'</span>';
     else st='<span class="st">Vence el día '+d+'</span>';
     return `<li class="item fx"><div class="ic" style="background:color-mix(in srgb, ${c.c} 22%, transparent)">${c.ic}</div>
       <button class="fxEdit" type="button" data-fx="${esc(f.id)}" aria-label="Editar ${esc(f.nombre)}"><b>${esc(f.nombre)}</b><small><span class="num">${fmt(f.monto)}</span>${st}</small></button>
-      <button class="pay${paid?" done":""}" type="button" data-fx="${esc(f.id)}">${paid?"✓ Pagado":"Pagar"}</button></li>`}).join("");
+      ${(!paid&&!active)?"<span></span>":`<button class="pay${paid?" done":""}" type="button" data-fx="${esc(f.id)}">${paid?"✓ Pagado":"Pagar"}</button>`}</li>`}).join("");
 }
 function esc(s){return String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]))}
 
@@ -548,8 +601,12 @@ function parseMonto(s){s=String(s).trim().replace(/\$/g,"").replace(/\s/g,"");
 let toastT;function toast(m){const t=$("toast");t.textContent=m;t.classList.add("show");clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove("show"),2200)}
 function coin(){const p=$("pig");const c=document.createElement("div");c.className="coin";c.textContent="$";p.appendChild(c);p.classList.remove("bump");void p.offsetWidth;p.classList.add("bump");setTimeout(()=>c.remove(),700)}
 
-$("form").addEventListener("submit",async e=>{
-  e.preventDefault();const err=$("err");err.hidden=true;
+$("form").addEventListener("submit",e=>{e.preventDefault();guardarGasto()});
+$("go").addEventListener("click",()=>guardarGasto());
+$("amt").addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();guardarGasto()}});
+async function guardarGasto(){
+  if($("go").disabled)return;
+  const err=$("err");err.hidden=true;
   const monto=parseMonto($("amt").value);
   if(!(monto>0)){err.textContent="Poné un monto mayor a cero, por ejemplo 2500.";err.hidden=false;$("amt").focus();return}
   const fecha=$("date").value||today();
@@ -560,7 +617,7 @@ $("form").addEventListener("submit",async e=>{
     if(fecha.slice(0,7)!==monthKey(view)){view=new Date(fecha+"T12:00:00");view.setDate(1);render()}
   }catch(x){err.textContent="No se pudo guardar. Revisá tu conexión y probá de nuevo.";err.hidden=false}
   $("go").disabled=false;
-});
+}
 $("nospend").addEventListener("click",async()=>{
   const t=today();if(ajustes.checkins.includes(t)){toast("Ya marcaste hoy. ¡Racha a salvo!");return}
   ajustes.checkins.push(t);render();
@@ -573,22 +630,63 @@ $("list").addEventListener("click",async e=>{
 });
 $("nudgeBtn").addEventListener("click",()=>{if($("nudgeBtn").dataset.target==="fx"){$("fxPanel").scrollIntoView({behavior:"smooth",block:"start"});return}$("amt").focus();$("amt").scrollIntoView({behavior:"smooth",block:"center"})});
 
+/* ---------- Avisos ---------- */
+$("nudgePay").addEventListener("click",async()=>{
+  const b=$("nudgePay"),f=ajustes.fijos.find(x=>x.id===b.dataset.fx),gid=b.dataset.gid;
+  if(!f||!gid||gastos.some(g=>g.id===gid))return;
+  await store.add({id:gid,monto:+f.monto,cat:f.cat,nota:f.nombre,fecha:today(),ts:Date.now(),fijo:f.id});
+  render();coin();toast("Pagado: "+f.nombre+" "+fmt(f.monto)+". No te aviso más este mes.");
+});
+$("avisoDias").addEventListener("change",async()=>{ajustes.avisoDias=+$("avisoDias").value;await store.saveAjustes();render();toast("Listo: te aviso "+$("avisoDias").selectedOptions[0].textContent)});
+function notifMsg(t){$("notifMsg").textContent=t}
+async function setupPeriodic(){
+  try{
+    const reg=await navigator.serviceWorker.ready;
+    if(!("periodicSync" in reg))return false;
+    const st=await navigator.permissions.query({name:"periodic-background-sync"});
+    if(st.state!=="granted")return false;
+    await reg.periodicSync.register("chanchito-fijos",{minInterval:12*60*60*1000});
+    return true;
+  }catch(e){return false}
+}
+function showNotifState(){
+  const b=$("notifBtn");
+  if(!("Notification" in window)||!("serviceWorker" in navigator)){b.hidden=true;notifMsg("Este navegador no permite avisos. Te sigo avisando acá arriba cuando abras la app.");return}
+  if(Notification.permission==="granted"){b.textContent="Probar aviso";notifMsg("Avisos activados ✓. Solo te aviso de los fijos que todavía no pagaste.")}
+  else if(Notification.permission==="denied"){b.textContent="Activar avisos en el celular";notifMsg("Los avisos están bloqueados. Activalos en Ajustes del celular → Apps → Chanchito → Notificaciones.")}
+}
+$("notifBtn").addEventListener("click",async()=>{
+  if(!("Notification" in window))return;
+  let perm=Notification.permission;
+  if(perm==="default"){try{perm=await Notification.requestPermission()}catch(e){perm="denied"}}
+  if(perm!=="granted"){showNotifState();return}
+  const reg=await navigator.serviceWorker.ready;
+  const bg=await setupPeriodic();
+  const x=fxDue(new Date())[0];
+  await reg.showNotification(x?"🐷 "+dueText(x):"🐷 Avisos activados",{body:x?"Tocá para abrir Chanchito y marcarlo como pagado.":"Te aviso cuando se acerque el vencimiento de un fijo sin pagar.",icon:"icon-192.png",badge:"icon-192.png",tag:"chanchito-test"});
+  showNotifState();
+  if(!bg)notifMsg("Avisos activados ✓. Tu celular decide cada cuánto revisa en segundo plano; además te aviso acá arriba al abrir la app.");
+});
+showNotifState();
+if("Notification" in window&&Notification.permission==="granted")setupPeriodic();
+
 /* ---------- Gastos fijos: interacción ---------- */
 let editingFx=null;
 $("fxCat").innerHTML=CATS.map(c=>`<option value="${c.id}">${c.ic} ${c.n}</option>`).join("");
 $("fxCat").value="servicios";
 function fxErr(t){const e=$("fxErr");e.textContent=t||"";e.hidden=!t}
-function resetFxForm(){editingFx=null;$("fxName").value="";$("fxAmt").value="";$("fxDay").value="";$("fxCat").value="servicios";
+function resetFxForm(){editingFx=null;$("fxName").value="";$("fxAmt").value="";$("fxDate").value="";$("fxCat").value="servicios";
   $("fxSave").textContent="Guardar fijo";$("fxSummary").textContent="＋ Agregar gasto fijo";$("fxDel").hidden=true;$("fxDel").textContent="Borrar este gasto fijo";$("fxDel").classList.remove("armed");fxErr("")}
 $("fxChips").addEventListener("click",e=>{const b=e.target.closest(".chip");if(!b)return;$("fxName").value=b.dataset.n;$("fxCat").value=b.dataset.c||"servicios";$("fxAmt").focus()});
 $("fxSave").addEventListener("click",async()=>{
-  const nombre=$("fxName").value.trim(),monto=parseMonto($("fxAmt").value),dia=parseInt($("fxDay").value,10),cat=$("fxCat").value;
+  const nombre=$("fxName").value.trim(),monto=parseMonto($("fxAmt").value),fv=$("fxDate").value,dia=/^\d{4}-\d{2}-\d{2}$/.test(fv)?parseInt(fv.slice(8,10),10):NaN,cat=$("fxCat").value;
   if(!nombre){fxErr("Poné un nombre, por ejemplo Alquiler.");$("fxName").focus();return}
   if(!(monto>0)){fxErr("Poné un monto mayor a cero.");$("fxAmt").focus();return}
-  if(!(dia>=1&&dia<=31)){fxErr("El día tiene que ser un número del 1 al 31.");$("fxDay").focus();return}
+  if(!(dia>=1&&dia<=31)){fxErr("Elegí en el calendario la fecha del próximo vencimiento.");$("fxDate").focus();return}
   const f=editingFx&&ajustes.fijos.find(x=>x.id===editingFx);
-  if(f)Object.assign(f,{nombre,monto:Math.round(monto*100)/100,dia,cat});
-  else ajustes.fijos.push({id:"f"+Date.now().toString(36)+Math.random().toString(36).slice(2,5),nombre,monto:Math.round(monto*100)/100,dia,cat});
+  const desde=fv.slice(0,7);
+  if(f)Object.assign(f,{nombre,monto:Math.round(monto*100)/100,dia,cat,desde});
+  else ajustes.fijos.push({id:"f"+Date.now().toString(36)+Math.random().toString(36).slice(2,5),nombre,monto:Math.round(monto*100)/100,dia,cat,desde});
   await store.saveAjustes();
   toast((f?"Actualizado: ":"Fijo agregado: ")+nombre+" "+fmt(monto));
   resetFxForm();$("fxAdd").open=false;render();
@@ -605,7 +703,7 @@ $("fxDel").addEventListener("click",async()=>{
 $("fxList").addEventListener("click",async e=>{
   const ed=e.target.closest(".fxEdit");
   if(ed){const f=ajustes.fijos.find(x=>x.id===ed.dataset.fx);if(!f)return;
-    resetFxForm();editingFx=f.id;$("fxName").value=f.nombre;$("fxAmt").value=f.monto;$("fxDay").value=f.dia;$("fxCat").value=f.cat;
+    resetFxForm();editingFx=f.id;$("fxName").value=f.nombre;$("fxAmt").value=f.monto;{const nx=fxNext(f,new Date());const d=nx?nx.due:new Date();$("fxDate").value=dkey(nx?d:new Date(d.getFullYear(),d.getMonth()+1,fxDay(f,d.getFullYear(),d.getMonth()+1)))}$("fxCat").value=f.cat;
     $("fxSave").textContent="Guardar cambios";$("fxSummary").textContent="Editando: "+f.nombre;$("fxDel").hidden=false;
     $("fxAdd").open=true;$("fxAdd").scrollIntoView({behavior:"smooth",block:"center"});return}
   const b=e.target.closest(".pay");if(!b)return;
